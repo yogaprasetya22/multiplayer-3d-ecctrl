@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Realtime Debug</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .test-box {
+      background: #2a2a2a;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border: 2px solid #00ff00;
+    }
+    button {
+      background: #00ff00;
+      color: #000;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #00cc00;
+    }
+    .log {
+      background: #000;
+      padding: 15px;
+      border-radius: 5px;
+      margin: 10px 0;
+      max-height: 400px;
+      overflow-y: auto;
+      font-size: 14px;
+    }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .warning { color: #ffaa00; }
+    .info { color: #00aaff; }
+    h1 { color: #00ff00; text-align: center; }
+    h2 { color: #ffaa00; }
+    .status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 3px;
+      font-weight: bold;
+      margin-left: 10px;
+    }
+    .status.ok { background: #00ff00; color: #000; }
+    .status.fail { background: #ff0000; color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>🔍 SUPABASE REALTIME DIAGNOSTIC TOOL</h1>
+
+  <div class="test-box">
+    <h2>Step 1: WebSocket Connection Test</h2>
+    <p>Testing if WebSocket can connect to Supabase...</p>
+    <button onclick="testWebSocket()">🔌 Test WebSocket</button>
+    <div id="ws-result" class="log"></div>
+  </div>
+
+  <div class="test-box">
+    <h2>Step 2: Supabase Realtime Channel Test</h2>
+    <p>Testing Supabase Realtime API directly...</p>
+    <button onclick="testSupabaseChannel()">📡 Test Channel</button>
+    <div id="channel-result" class="log"></div>
+  </div>
+
+  <div class="test-box">
+    <h2>Step 3: Broadcast Test</h2>
+    <p>Testing broadcast functionality...</p>
+    <button onclick="testBroadcast()">📤 Test Broadcast</button>
+    <div id="broadcast-result" class="log"></div>
+  </div>
+
+  <div class="test-box">
+    <h2>Step 4: Presence Test</h2>
+    <p>Testing presence tracking...</p>
+    <button onclick="testPresence()">👥 Test Presence</button>
+    <div id="presence-result" class="log"></div>
+  </div>
+
+  <div class="test-box">
+    <h2>Step 5: Network Information</h2>
+    <button onclick="showNetworkInfo()">🌐 Show Network Info</button>
+    <div id="network-info" class="log"></div>
+  </div>
+
+  <script>
+    // Your Supabase credentials
+    const SUPABASE_URL = 'https://lwetcgkeakjyvgavudof.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx3ZXRjZ2tlYWtqeXZnYXZ1ZG9mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU0MjA1NTQsImV4cCI6MjA4MDk5NjU1NH0.RwW1E00AA2htHYGaygAjdTO4z_BRrHoKQzaFw3P-sFo';
+
+    let supabase;
+    let testChannel;
+
+    function log(elementId, message, type = 'info') {
+      const el = document.getElementById(elementId);
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type;
+      el.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function clear(elementId) {
+      document.getElementById(elementId).innerHTML = '';
+    }
+
+    // Test 1: Raw WebSocket
+    async function testWebSocket() {
+      clear('ws-result');
+      log('ws-result', '🔄 Starting WebSocket test...', 'info');
+
+      const wsUrl = SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket';
+      log('ws-result', `Connecting to: ${wsUrl}`, 'info');
+
+      try {
+        const ws = new WebSocket(wsUrl);
+        
+        const timeout = setTimeout(() => {
+          log('ws-result', '❌ WebSocket connection timeout (10s)', 'error');
+          ws.close();
+        }, 10000);
+
+        ws.onopen = () => {
+          clearTimeout(timeout);
+          log('ws-result', '✅ WebSocket connection successful!', 'success');
+          log('ws-result', 'Ready state: ' + ws.readyState, 'success');
+          setTimeout(() => ws.close(), 1000);
+        };
+
+        ws.onerror = (error) => {
+          clearTimeout(timeout);
+          log('ws-result', '❌ WebSocket error: ' + error, 'error');
+          log('ws-result', 'This usually means:', 'warning');
+          log('ws-result', '1. Firewall blocking WebSocket', 'warning');
+          log('ws-result', '2. Network proxy issues', 'warning');
+          log('ws-result', '3. Realtime not enabled in Supabase', 'warning');
+        };
+
+        ws.onclose = (event) => {
+          log('ws-result', `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`, 'info');
+        };
+
+      } catch (error) {
+        log('ws-result', '❌ Exception: ' + error.message, 'error');
+      }
+    }
+
+    // Test 2: Supabase Channel
+    async function testSupabaseChannel() {
+      clear('channel-result');
+      log('channel-result', '🔄 Initializing Supabase client...', 'info');
+
+      try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+          realtime: {
+            params: {
+              eventsPerSecond: 10
+            }
+          }
+        });
+
+        log('channel-result', '✅ Supabase client created', 'success');
+        log('channel-result', '🔄 Creating test channel...', 'info');
+
+        const testId = 'test-' + Date.now();
+        testChannel = supabase.channel('debug-test-' + testId, {
+          config: {
+            broadcast: { self: false },
+            presence: { key: testId }
+          }
+        });
+
+        log('channel-result', '🔄 Subscribing to channel...', 'info');
+
+        const timeout = setTimeout(() => {
+          log('channel-result', '⏱️ TIMEOUT after 15 seconds!', 'error');
+          log('channel-result', '❌ This means Realtime is NOT working!', 'error');
+          log('channel-result', '', 'error');
+          log('channel-result', '🔧 SOLUTIONS:', 'warning');
+          log('channel-result', '1. Go to Supabase Dashboard', 'warning');
+          log('channel-result', '2. Project Settings → API', 'warning');
+          log('channel-result', '3. Enable "Realtime" (toggle ON)', 'warning');
+          log('channel-result', '4. Database → Replication', 'warning');
+          log('channel-result', '5. Enable replication for your tables', 'warning');
+        }, 15000);
+
+        testChannel.subscribe(async (status) => {
+          clearTimeout(timeout);
+          log('channel-result', `📡 Channel status: ${status}`, status === 'SUBSCRIBED' ? 'success' : 'error');
+
+          if (status === 'SUBSCRIBED') {
+            log('channel-result', '✅ ✅ ✅ SUCCESS! Channel subscribed!', 'success');
+            log('channel-result', 'Realtime is WORKING! 🎉', 'success');
+            
+            // Try tracking presence
+            await testChannel.track({
+              id: testId,
+              online_at: new Date().toISOString()
+            });
+            log('channel-result', '✅ Presence tracked successfully', 'success');
+
+          } else if (status === 'TIMED_OUT') {
+            log('channel-result', '❌ TIMEOUT! This is the problem!', 'error');
+            log('channel-result', 'Possible causes:', 'warning');
+            log('channel-result', '1. Realtime not enabled in Supabase Dashboard', 'warning');
+            log('channel-result', '2. Firewall/VPN blocking WebSocket', 'warning');
+            log('channel-result', '3. Network issue', 'warning');
+          } else if (status === 'CLOSED') {
+            log('channel-result', '❌ Connection CLOSED!', 'error');
+          } else if (status === 'CHANNEL_ERROR') {
+            log('channel-result', '❌ Channel ERROR!', 'error');
+          }
+        });
+
+      } catch (error) {
+        log('channel-result', '❌ Exception: ' + error.message, 'error');
+        console.error(error);
+      }
+    }
+
+    // Test 3: Broadcast
+    async function testBroadcast() {
+      clear('broadcast-result');
+      
+      if (!testChannel) {
+        log('broadcast-result', '⚠️ Run Channel Test first!', 'warning');
+        return;
+      }
+
+      log('broadcast-result', '🔄 Testing broadcast...', 'info');
+
+      testChannel.on('broadcast', { event: 'test-message' }, ({ payload }) => {
+        log('broadcast-result', '📥 Received broadcast: ' + JSON.stringify(payload), 'success');
+      });
+
+      testChannel.send({
+        type: 'broadcast',
+        event: 'test-message',
+        payload: { message: 'Hello from test!', timestamp: Date.now() }
+      });
+
+      log('broadcast-result', '📤 Broadcast sent!', 'success');
+      log('broadcast-result', 'Open this page in another tab to test receiving', 'info');
+    }
+
+    // Test 4: Presence
+    async function testPresence() {
+      clear('presence-result');
+      
+      if (!testChannel) {
+        log('presence-result', '⚠️ Run Channel Test first!', 'warning');
+        return;
+      }
+
+      log('presence-result', '🔄 Testing presence...', 'info');
+
+      testChannel.on('presence', { event: 'sync' }, () => {
+        const state = testChannel.presenceState();
+        const count = Object.keys(state).length;
+        log('presence-result', `👥 Presence sync: ${count} users online`, 'success');
+        log('presence-result', 'State: ' + JSON.stringify(state, null, 2), 'info');
+      });
+
+      testChannel.on('presence', { event: 'join' }, ({ key }) => {
+        log('presence-result', `✋ User joined: ${key}`, 'success');
+      });
+
+      testChannel.on('presence', { event: 'leave' }, ({ key }) => {
+        log('presence-result', `👋 User left: ${key}`, 'warning');
+      });
+
+      log('presence-result', '✅ Presence listeners set up', 'success');
+      log('presence-result', 'Open this page in another tab to see join/leave events', 'info');
+    }
+
+    // Test 5: Network Info
+    function showNetworkInfo() {
+      clear('network-info');
+      
+      log('network-info', '🌐 Network Information:', 'info');
+      log('network-info', '', 'info');
+      log('network-info', 'User Agent: ' + navigator.userAgent, 'info');
+      log('network-info', 'Online: ' + navigator.onLine, navigator.onLine ? 'success' : 'error');
+      log('network-info', 'Connection Type: ' + (navigator.connection?.effectiveType || 'unknown'), 'info');
+      log('network-info', 'Language: ' + navigator.language, 'info');
+      log('network-info', '', 'info');
+      log('network-info', 'WebSocket Support: ' + ('WebSocket' in window ? 'YES ✅' : 'NO ❌'), 'WebSocket' in window ? 'success' : 'error');
+      log('network-info', '', 'info');
+      log('network-info', 'Supabase URL: ' + SUPABASE_URL, 'info');
+      log('network-info', 'Realtime URL: ' + SUPABASE_URL.replace('https://', 'wss://') + '/realtime/v1/websocket', 'info');
+    }
+
+    // Show initial network info
+    setTimeout(() => {
+      showNetworkInfo();
+    }, 500);
+  </script>
+
+  <div style="margin-top: 50px; padding: 20px; background: #2a2a2a; border-radius: 8px; border: 2px solid #ffaa00;">
+    <h2 style="color: #ffaa00;">📋 Checklist Troubleshooting</h2>
+    <div style="color: #fff; line-height: 2;">
+      <div>☐ 1. Run WebSocket test → Should show "✅ WebSocket connection successful"</div>
+      <div>☐ 2. Run Channel test → Should show "✅ SUCCESS! Channel subscribed"</div>
+      <div>☐ 3. If TIMEOUT → Check Supabase Dashboard → Enable Realtime</div>
+      <div>☐ 4. If WebSocket fails → Check firewall/VPN/proxy</div>
+      <div>☐ 5. Try different network (mobile hotspot) to rule out firewall</div>
+    </div>
+  </div>
+</body>
+</html>
