@@ -7,3 +7,4 @@ export { FPSCounter } from './FPSCounter';
 export { NetworkDebug } from './NetworkDebug';
 export { PlayerDebugOverlay } from './PlayerDebugOverlay';
 export { PerformanceMonitor } from './PerformanceMonitor';
+export { LoadingScreen } from './LoadingScreen';

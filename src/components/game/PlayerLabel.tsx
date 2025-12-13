@@ -122,7 +122,7 @@ export const MyPlayerLabel = memo(function MyPlayerLabel({
 
   return (
     <Html
-      position={[0, 2.2, 0]}
+      position={[0, 0.7, 0]}
       center
       distanceFactor={8}
       occlude={false}
@@ -148,7 +148,7 @@ export const MyPlayerLabel = memo(function MyPlayerLabel({
         
         {/* Username - Hijau untuk player sendiri */}
         <div 
-          className="bg-green-600/90 text-green-100 px-2 py-0.5 rounded text-xs font-medium"
+          className="bg-green-600/90 text-green-100 px-2 py-0.5 rounded text-2xl font-medium"
           style={{ whiteSpace: 'nowrap' }}
         >
           {displayName}

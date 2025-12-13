@@ -55,65 +55,80 @@ export function PerformanceMonitor() {
       try {
         const startTime = performance.now();
         
-        // Simple ping via Supabase RPC atau REST check
-        // Kita gunakan method sederhana - fetch ke Supabase endpoint
-        const { error } = await supabase.from('_ping_check').select('*').limit(1).maybeSingle();
+        // Use simple heartbeat - send a query to Supabase and measure response time
+        // This gives us actual network latency
+        const { error } = await supabase.from('players').select('count').limit(1);
         
-        // Kalau table tidak ada, tetap hitung latency dari response
         const endTime = performance.now();
         const pingMs = Math.round(endTime - startTime);
         
-        if (mounted) {
+        // Only update if we got a result (not error)
+        if (!error && mounted) {
           setStats(prev => ({
             ...prev,
-            ping: pingMs,
-            networkStatus: pingMs < 100 ? 'good' : pingMs < 200 ? 'medium' : 'poor',
+            ping: Math.max(pingMs, prev.ping), // Use max to show real latency
           }));
         }
       } catch (err) {
-        // Fallback: estimate from broadcast events
-        if (mounted) {
-          setStats(prev => ({ ...prev, networkStatus: 'poor' }));
-        }
+        // Silently fail - we'll use broadcast/receive measurement instead
       }
     };
 
     // Initial ping check
     measurePing();
     
-    // Measure ping setiap 5 detik (tidak terlalu sering agar tidak spam server)
+    // Measure ping setiap 3 detik untuk fallback
+    pingInterval.current = setInterval(measurePing, 3000);
     pingInterval.current = setInterval(measurePing, 5000);
 
     // ===================== NETWORK EVENT LISTENER =====================
-    // Listen to broadcast events untuk lebih akurat
+    // Listen to broadcast events untuk measure actual network latency
+    let lastBroadcastTime = 0;
     let lastReceiveTime = 0;
-    let receiveDeltas: number[] = [];
+    let pingValues: number[] = [];
+
+    const handleBroadcast = () => {
+      lastBroadcastTime = performance.now();
+    };
 
     const handleReceive = () => {
       const now = performance.now();
-      if (lastReceiveTime > 0) {
-        const delta = now - lastReceiveTime;
-        receiveDeltas.push(delta);
+      
+      if (lastBroadcastTime > 0) {
+        // Calculate round-trip time estimate
+        // Since we don't have server timestamp, estimate from broadcast->receive delta
+        const broadcastToReceive = now - lastBroadcastTime;
+        const estimatedPing = Math.round(broadcastToReceive / 2); // Assume symmetric latency
         
-        // Keep only last 10 deltas
-        if (receiveDeltas.length > 10) {
-          receiveDeltas.shift();
+        pingValues.push(estimatedPing);
+        
+        // Keep only last 20 measurements for averaging
+        if (pingValues.length > 20) {
+          pingValues.shift();
         }
         
-        // Calculate average receive interval as rough "ping" estimate
-        const avgDelta = receiveDeltas.reduce((a, b) => a + b, 0) / receiveDeltas.length;
+        // Calculate average ping
+        const avgPing = Math.round(pingValues.reduce((a, b) => a + b, 0) / pingValues.length);
         
-        // Network health based on receive consistency
-        const status = avgDelta < 100 ? 'good' : avgDelta < 200 ? 'medium' : 'poor';
+        // Determine network health
+        let status: 'good' | 'medium' | 'poor' | 'connecting' = 'good';
+        if (avgPing < 100) status = 'good';
+        else if (avgPing < 200) status = 'medium';
+        else status = 'poor';
         
-        setStats(prev => ({
-          ...prev,
-          networkStatus: status,
-        }));
+        if (mounted) {
+          setStats(prev => ({
+            ...prev,
+            ping: avgPing,
+            networkStatus: status,
+          }));
+        }
       }
+      
       lastReceiveTime = now;
     };
 
+    window.addEventListener('network:broadcast', handleBroadcast as EventListener);
     window.addEventListener('network:receive', handleReceive as EventListener);
 
     return () => {
@@ -122,6 +137,7 @@ export function PerformanceMonitor() {
       if (pingInterval.current) {
         clearInterval(pingInterval.current);
       }
+      window.removeEventListener('network:broadcast', handleBroadcast as EventListener);
       window.removeEventListener('network:receive', handleReceive as EventListener);
     };
   }, []);
@@ -135,10 +151,11 @@ export function PerformanceMonitor() {
   };
 
   const getPingColor = () => {
-    if (stats.ping < 80) return 'text-green-400';
-    if (stats.ping < 150) return 'text-yellow-400';
-    if (stats.ping < 250) return 'text-orange-400';
-    return 'text-red-400';
+    if (stats.ping === 0) return 'text-gray-400';      // Not measured yet
+    if (stats.ping < 80) return 'text-green-400';      // Excellent
+    if (stats.ping < 150) return 'text-yellow-400';    // Good
+    if (stats.ping < 250) return 'text-orange-400';    // Fair
+    return 'text-red-400';                             // Poor
   };
 
   const getNetworkIcon = () => {
@@ -146,7 +163,8 @@ export function PerformanceMonitor() {
       case 'good': return '🟢';
       case 'medium': return '🟡';
       case 'poor': return '🔴';
-      default: return '⚪';
+      case 'connecting': return '⚪';
+      default: return '⚫';
     }
   };
 
@@ -166,7 +184,7 @@ export function PerformanceMonitor() {
       {/* Ping */}
       <div className="text-center">
         <div className={`text-2xl font-bold font-mono ${getPingColor()}`}>
-          {stats.ping > 0 ? stats.ping : '--'}
+          {stats.ping > 0 ? `${stats.ping}ms` : '--'}
         </div>
         <div className="text-xs text-white/70">PING</div>
       </div>

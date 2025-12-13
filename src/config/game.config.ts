@@ -1,49 +1,39 @@
-// ===================== ECCTRL CONFIGURATION =====================
-// Konfigurasi character controller yang smooth seperti Ecctrl repo
+// ===================== BVHECCTRL CONFIGURATION =====================
+// BVHEcctrl - No physics engine needed! Uses BVH for collision detection.
 
-export const ECCTRL_CONFIG = {
-  // Floating Capsule (Spring-Damper System)
-  floatHeight: 0.4,
-  springK: 1.2,
-  dampingC: 0.12,
+export const BVHECCTRL_CONFIG = {
+    // Collider (stabil)
+    colliderCapsuleArgs: [0.5, 1.5, 16, 16] as [number, number, number, number],
 
-  // Movement
-  maxVelLimit: 6,
-  turnVelMultiplier: 0.8,
-  turnSpeed: 15,
-  sprintMult: 1.8,
-  moveImpulsePointY: 0.5,
+    // Physics (INI KUNCI ANTI MARS)
+    gravity: 18, // ⬅️ lebih berat
+    fallGravityFactor: 4.5, // ⬅️ jatuh cepet
+    maxFallSpeed: 60,
+    mass: 1,
 
-  // Acceleration & Drag
-  accDeltaTime: 8,
-  rejectVelMult: 4,
-  dragDampingC: 0.15,
-  airDragMultiplier: 0.2,
+    // Movement (ARCade)
+    turnSpeed: 16,
+    maxWalkSpeed: 4.5,
+    maxRunSpeed: 8.5,
+    acceleration: 38, // ⬅️ instant
+    deceleration: 34, // ⬅️ stop cepat
 
-  // Jump
-  jumpVel: 6,
-  jumpForceToGroundMult: 5,
-  slopJumpMult: 0.25,
-  sprintJumpMult: 1.2,
-  fallingGravityScale: 2.5,
-  fallingMaxVel: -20,
+    // Jump (tegas, tidak float)
+    jumpVel: 6.6,
 
-  // Auto Balance
-  autoBalance: true,
-  autoBalanceSpringK: 0.4,
-  autoBalanceDampingC: 0.04,
-  autoBalanceSpringOnY: 0.5,
-  autoBalanceDampingOnY: 0.02,
+    // Ground snap (NEMPEL TANAH)
+    floatHeight: 0.16, // jangan terlalu kecil
+    floatSpringK: 650, // cukup keras
+    floatDampingC: 32, // redam bounce
+    floatSensorRadius: 0.14,
 
-  // Camera
-  camInitDis: -8,
-  camMaxDis: -15,
-  camMinDis: -3,
-  camFollowMult: 11,
-  camLerpMult: 25,
-  camCollision: true,
-  camCollisionOffset: 0.7,
+    // Collision
+    collisionCheckIteration: 2,
+    collisionPushBackVelocity: 2.8,
+
+    delay: 0.4,
 };
+
 
 // ===================== KEYBOARD CONTROLS =====================
 export const KEYBOARD_MAP = [

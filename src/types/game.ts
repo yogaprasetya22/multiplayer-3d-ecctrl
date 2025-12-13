@@ -1,5 +1,7 @@
 // ===================== GAME TYPES =====================
 
+import * as THREE from 'three';
+
 export type ChatMessage =
   | { type: 'system'; message: string; timestamp: number }
   | { type: 'message'; username: string; message: string; timestamp: number; isOwn: boolean };
@@ -51,12 +53,22 @@ export interface ObstacleData {
   color: string;
 }
 
-// Ecctrl ref type
-export interface EcctrlRef {
-  group: {
-    translation: () => { x: number; y: number; z: number };
-    rotation: () => { x: number; y: number; z: number; w: number };
-  };
+// BVHEcctrl ref type (no physics engine needed!)
+export interface BVHEcctrlRef {
+  group: THREE.Group | null;
+  model: THREE.Group | null;
+  resetLinVel: () => void;
+  addLinVel: (v: THREE.Vector3) => void;
+  setLinVel: (v: THREE.Vector3) => void;
+  setMovement: (input: {
+    forward?: boolean;
+    backward?: boolean;
+    leftward?: boolean;
+    rightward?: boolean;
+    joystick?: { x: number; y: number };
+    run?: boolean;
+    jump?: boolean;
+  }) => void;
 }
 
 // Channel type (simplified Supabase channel)

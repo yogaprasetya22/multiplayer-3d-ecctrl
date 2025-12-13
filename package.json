@@ -11,9 +11,8 @@
   "dependencies": {
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.2",
-    "@react-three/rapier": "^2.2.0",
     "@supabase/supabase-js": "^2.87.1",
-    "ecctrl": "^1.0.97",
+    "bvhecctrl": "^0.0.18",
     "next": "16.0.8",
     "react": "19.2.1",
     "react-dom": "19.2.1",
