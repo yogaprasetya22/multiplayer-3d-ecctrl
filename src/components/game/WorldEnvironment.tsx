@@ -5,6 +5,7 @@ import { StaticCollider } from 'bvhecctrl';
 import { Sky } from '@react-three/drei';
 import { ForestMap } from './ForestMap';
 import { BrendamDocksOptimized } from './BrendamDocksOptimized';
+import { usePlayerSettings } from '@/config/playerSettings';
 
 // Simple fallback box saat map loading
 function MapFallback() {
@@ -17,6 +18,7 @@ function MapFallback() {
 }
 
 export function WorldEnvironment() {
+  const { settings } = usePlayerSettings();
   return (
     <>
       {/* Sky */}
@@ -44,7 +46,8 @@ export function WorldEnvironment() {
           {/* <ForestMap scale={1.05} position={[0, 0, 0]} /> */}
           <BrendamDocksOptimized 
             scale={50.05} 
-            position={[0, 0, 0]} 
+            position={[0, 0, 0]}
+            maxDistance={settings?.mapCullingDisabled ? 50000 : 180}
           />
         </StaticCollider>
       </Suspense>

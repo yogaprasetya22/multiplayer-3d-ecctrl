@@ -1,13 +1,20 @@
 // ===================== BVHECCTRL CONFIGURATION =====================
 // BVHEcctrl - No physics engine needed! Uses BVH for collision detection.
 
-export const BVHECCTRL_CONFIG = {
-    // Collider (stabil)
-    colliderCapsuleArgs: [0.5, 1.5, 16, 16] as [number, number, number, number],
+import { FloatCheckType } from "bvhecctrl";
 
-    // Physics (INI KUNCI ANTI MARS)
-    gravity: 18, // ⬅️ lebih berat
-    fallGravityFactor: 4.5, // ⬅️ jatuh cepet
+export const BVHECCTRL_CONFIG = {
+    // =====================
+    // COLLIDER
+    // =====================
+    // [radius, height, radialSegments, heightSegments]
+    colliderCapsuleArgs: [0.3, 0.8, 4, 8] as [number, number, number, number],
+
+    // =====================
+    // PHYSICS
+    // =====================
+    gravity: 14, // increase from 9.8 to remove 'floaty' feeling
+    fallGravityFactor: 3.2, // increase fall acceleration to avoid long floaty falls
     maxFallSpeed: 60,
     mass: 1,
 
@@ -15,50 +22,71 @@ export const BVHECCTRL_CONFIG = {
     turnSpeed: 16,
     maxWalkSpeed: 4.5,
     maxRunSpeed: 8.5,
-    acceleration: 38, // ⬅️ instant
-    deceleration: 34, // ⬅️ stop cepat
+    // Movement responsiveness
+    acceleration: 34, // slightly less instant
 
-    // Jump (tegas, tidak float)
-    jumpVel: 6.6,
 
-    // Ground snap (NEMPEL TANAH)
-    floatHeight: 0.16, // jangan terlalu kecil
-    floatSpringK: 650, // cukup keras
-    floatDampingC: 32, // redam bounce
-    floatSensorRadius: 0.14,
+    sleepTimeout: 10,
+    slowMotionFactor: 1,
+    paused: false,
+    delay: 3,
 
-    // Collision
-    collisionCheckIteration: 2,
-    collisionPushBackVelocity: 2.8,
+    // =====================
+    // MOVEMENT
+    deceleration: 30,
+    counterAccFactor: 0.5,
+    airDragFactor: 0.3,
 
-    delay: 0.4,
+    // =====================
+    // JUMP
+    // =====================
+    jumpVel: 6,
+
+    // =====================
+    // FLOATING / GROUND SNAP
+    // =====================
+    floatCheckType: "BOTH" as FloatCheckType,
+    maxSlope: 1,
+    floatHeight: 0.4,
+    floatPullBackHeight: 0.25,
+    floatSensorRadius: 0.12,
+    floatSpringK: 900,
+    floatDampingC: 30,
+
+    // =====================
+    // COLLISION RESPONSE
+    // =====================
+    collisionCheckIteration: 3,
+    collisionPushBackVelocity: 3,
+    collisionPushBackDamping: 0.1,
+    collisionPushBackThreshold: 0.001,
 };
 
 
 // ===================== KEYBOARD CONTROLS =====================
 export const KEYBOARD_MAP = [
-  { name: 'forward', keys: ['ArrowUp', 'KeyW'] },
-  { name: 'backward', keys: ['ArrowDown', 'KeyS'] },
-  { name: 'leftward', keys: ['ArrowLeft', 'KeyA'] },
-  { name: 'rightward', keys: ['ArrowRight', 'KeyD'] },
-  { name: 'jump', keys: ['Space'] },
-  { name: 'run', keys: ['Shift'] },
+    { name: "forward", keys: ["ArrowUp", "KeyW"] },
+    { name: "backward", keys: ["ArrowDown", "KeyS"] },
+    { name: "leftward", keys: ["ArrowLeft", "KeyA"] },
+    { name: "rightward", keys: ["ArrowRight", "KeyD"] },
+    { name: "jump", keys: ["Space"] },
+    { name: "run", keys: ["Shift"] },
 ];
 
 // ===================== PHYSICS CONFIG =====================
 export const PHYSICS_CONFIG = {
-  gravity: [0, -20, 0] as [number, number, number],
-  timeStep: 'vary' as const,
+    gravity: [0, -20, 0] as [number, number, number],
+    timeStep: "vary" as const,
 };
 
 // ===================== GAME CONFIG =====================
 export const GAME_CONFIG = {
-  // Broadcast SANGAT CEPAT untuk movement yang super smooth (60 FPS - game modern)
-  broadcastInterval: 0.016, // ~60 FPS network update - ULTRA SMOOTH!
-  playerSpawnPosition: [0, 3, 0] as [number, number, number],
-  defaultLobbyId: 'default-lobby',
-  
-  // Performance optimization untuk 200 players
-  maxVisiblePlayers: 200,
-  playerCullDistance: 150, // Jarak max untuk render player
+    // Broadcast SANGAT CEPAT untuk movement yang super smooth (60 FPS - game modern)
+    broadcastInterval: 0.016, // ~60 FPS network update - ULTRA SMOOTH!
+    playerSpawnPosition: [0, 3, 0] as [number, number, number],
+    defaultLobbyId: "default-lobby",
+
+    // Performance optimization untuk 200 players
+    maxVisiblePlayers: 200,
+    playerCullDistance: 150, // Jarak max untuk render player
 };
