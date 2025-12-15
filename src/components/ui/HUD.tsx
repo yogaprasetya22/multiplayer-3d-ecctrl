@@ -12,7 +12,7 @@ export function HUD({ playerCount, score, maxScore, lobbyId }: HUDProps) {
     <>
       {/* Player Count */}
       <div className="absolute top-5 left-5 bg-black/70 text-white px-5 py-3 rounded-2xl backdrop-blur">
-        <div className="text-3xl font-bold" id="player-count">
+        <div className="text-sm lg:text-3xl font-bold" id="player-count">
           {playerCount}
         </div>
         <div className="text-xs opacity-80">Players</div>
@@ -20,10 +20,10 @@ export function HUD({ playerCount, score, maxScore, lobbyId }: HUDProps) {
 
       {/* Score */}
       <div className="absolute top-5 left-1/2 -translate-x-1/2 bg-black/70 text-white px-6 py-4 rounded-2xl backdrop-blur">
-        <div className="text-4xl font-bold">
+        <div className="text-sm lg:text-3xl font-bold">
           {score}/{maxScore}
         </div>
-        <div className="text-sm opacity-80">Gems</div>
+        <div className="text-xs opacity-80">Gems</div>
       </div>
 
       {/* Lobby ID */}

@@ -30,7 +30,7 @@ export function PerformanceMonitor() {
     // ===================== FPS COUNTER =====================
     const updateFPS = () => {
       if (!mounted) return;
-      
+
       frameCount.current++;
       const now = performance.now();
       const delta = now - lastFpsTime.current;
@@ -51,17 +51,17 @@ export function PerformanceMonitor() {
     // ===================== PING MEASUREMENT =====================
     const measurePing = async () => {
       if (!mounted) return;
-      
+
       try {
         const startTime = performance.now();
-        
+
         // Use simple heartbeat - send a query to Supabase and measure response time
         // This gives us actual network latency
         const { error } = await supabase.from('players').select('count').limit(1);
-        
+
         const endTime = performance.now();
         const pingMs = Math.round(endTime - startTime);
-        
+
         // Only update if we got a result (not error)
         if (!error && mounted) {
           setStats(prev => ({
@@ -76,7 +76,7 @@ export function PerformanceMonitor() {
 
     // Initial ping check
     measurePing();
-    
+
     // Measure ping setiap 3 detik untuk fallback
     pingInterval.current = setInterval(measurePing, 3000);
     pingInterval.current = setInterval(measurePing, 5000);
@@ -93,29 +93,29 @@ export function PerformanceMonitor() {
 
     const handleReceive = () => {
       const now = performance.now();
-      
+
       if (lastBroadcastTime > 0) {
         // Calculate round-trip time estimate
         // Since we don't have server timestamp, estimate from broadcast->receive delta
         const broadcastToReceive = now - lastBroadcastTime;
         const estimatedPing = Math.round(broadcastToReceive / 2); // Assume symmetric latency
-        
+
         pingValues.push(estimatedPing);
-        
+
         // Keep only last 20 measurements for averaging
         if (pingValues.length > 20) {
           pingValues.shift();
         }
-        
+
         // Calculate average ping
         const avgPing = Math.round(pingValues.reduce((a, b) => a + b, 0) / pingValues.length);
-        
+
         // Determine network health
         let status: 'good' | 'medium' | 'poor' | 'connecting' = 'good';
         if (avgPing < 100) status = 'good';
         else if (avgPing < 200) status = 'medium';
         else status = 'poor';
-        
+
         if (mounted) {
           setStats(prev => ({
             ...prev,
@@ -124,7 +124,7 @@ export function PerformanceMonitor() {
           }));
         }
       }
-      
+
       lastReceiveTime = now;
     };
 
@@ -172,25 +172,25 @@ export function PerformanceMonitor() {
     <div className="absolute top-5 left-28 bg-black/70 backdrop-blur px-4 py-3 rounded-2xl flex gap-6 items-center">
       {/* FPS */}
       <div className="text-center">
-        <div className={`text-2xl font-bold font-mono ${getFpsColor()}`}>
+        <div className={`text-sm lg:text-2xl font-bold font-mono ${getFpsColor()}`}>
           {stats.fps}
         </div>
         <div className="text-xs text-white/70">FPS</div>
       </div>
-      
+
       {/* Divider */}
       <div className="w-px h-10 bg-white/20" />
-      
+
       {/* Ping */}
       <div className="text-center">
-        <div className={`text-2xl font-bold font-mono ${getPingColor()}`}>
+        <div className={`text-sm lg:text-2xl font-bold font-mono ${getPingColor()}`}>
           {stats.ping > 0 ? `${stats.ping}ms` : '--'}
         </div>
         <div className="text-xs text-white/70">PING</div>
       </div>
-      
+
       {/* Network Status Indicator */}
-      <div className="text-lg" title={`Network: ${stats.networkStatus}`}>
+      <div className="text-lg lg:text-2xl" title={`Network: ${stats.networkStatus}`}>
         {getNetworkIcon()}
       </div>
     </div>

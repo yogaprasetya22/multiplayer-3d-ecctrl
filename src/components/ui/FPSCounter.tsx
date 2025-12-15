@@ -44,7 +44,7 @@ export function FPSCounter() {
 
   return (
     <div className="absolute top-5 left-28 bg-black/70 text-white px-4 py-3 rounded-2xl backdrop-blur">
-      <div className={`text-2xl font-bold font-mono ${getColor()}`}>
+      <div className={`text-xs md:text-2xl font-bold font-mono ${getColor()}`}>
         {fps}
       </div>
       <div className="text-xs opacity-80">FPS</div>
