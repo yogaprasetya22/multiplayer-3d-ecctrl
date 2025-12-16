@@ -262,61 +262,6 @@ function CameraFollower({ bvhEcctrlRef }: CameraFollowerProps) {
     // Check if moved into control area - if yes, stop tracking
     if (isTouchInControlArea(ourTouch.clientX, ourTouch.clientY)) {
       activeTouchId.current = null;
-
-    // Tweak debug capsule/material appearance coming from BVHEcctrl debug rendering.
-    // BVHEcctrl draws internal debug meshes; we try to find capsule-like geometry and
-    // tone down its material (less transparent / less opal). This is a best-effort
-    // runtime override and runs shortly after mount.
-    useEffect(() => {
-      const api = bvhEcctrlRef.current;
-      if (!api) return;
-
-      const applyDebugStyle = () => {
-        // BVHEcctrl usually attaches its internal debug meshes near the api.group
-        const root = (api as any).group?.parent ?? (api as any).group;
-        if (!root) return;
-
-        root.traverse((obj: any) => {
-          try {
-            if (!obj || !obj.material || !obj.geometry) return;
-
-            const geomParams = obj.geometry.parameters || {};
-
-            // Heuristic: capsule-like debug geometry will expose a height or radius parameter
-            const looksLikeCapsule = ('height' in geomParams) || ('radius' in geomParams) || obj.type?.toLowerCase()?.includes('capsule');
-
-            if (looksLikeCapsule) {
-              // Make material less shiny/opal: disable strong transparency and use muted color
-              const mat = obj.material as any;
-              mat.transparent = false;
-              if (mat.opacity !== undefined) mat.opacity = 0.85;
-              if (mat.color && typeof mat.color.set === 'function') mat.color.set('#666666');
-              if ('wireframe' in mat) mat.wireframe = false;
-              mat.depthWrite = true;
-              mat.needsUpdate = true;
-            }
-
-            // If the debug is drawn as line segments, reduce intensity instead of filled mesh
-            if (obj.type === 'LineSegments' || obj.type === 'LineLoop') {
-              obj.visible = true;
-              const m = obj.material as any;
-              if (m) {
-                m.transparent = true;
-                m.opacity = 0.7;
-                if (m.color && typeof m.color.set === 'function') m.color.set('#444444');
-                m.needsUpdate = true;
-              }
-            }
-          } catch (e) {
-            // ignore traversal errors
-          }
-        });
-      };
-
-      // Delay slightly to allow BVHEcctrl to create internal debug meshes
-      const t = window.setTimeout(applyDebugStyle, 200);
-      return () => window.clearTimeout(t);
-    }, [bvhEcctrlRef]);
       lastTouchPos.current = null;
       return;
     }
@@ -329,8 +274,7 @@ function CameraFollower({ bvhEcctrlRef }: CameraFollowerProps) {
 
     if (camControlRef.current) {
       const sensitivity = settings?.mobile?.touchSensitivity ?? 0.004; // Use configured touch sensitivity (mobile)
-      // Apply rotation immediately (no damping) for more responsive touch control
-      camControlRef.current.rotate(-deltaX * sensitivity, deltaY * sensitivity, false);
+      camControlRef.current.rotate(-deltaX * sensitivity, deltaY * sensitivity, true);
     }
 
     // Update last position
@@ -381,32 +325,14 @@ function CameraFollower({ bvhEcctrlRef }: CameraFollowerProps) {
     const handlePointerLockMove = (e: MouseEvent) => {
       if (document.pointerLockElement !== gl.domElement) return;
       if (!camControlRef.current) return;
-      const sensitivity = settings?.desktop?.mouseSensitivity ?? 0.002;
-      // Use small rotations based on movement, apply immediately (no damping)
-      camControlRef.current.rotate(-e.movementX * sensitivity, -e.movementY * sensitivity, false);
+  const sensitivity = settings?.desktop?.mouseSensitivity ?? 0.002;
+      // Use small rotations based on movement
+      camControlRef.current.rotate(-e.movementX * sensitivity, -e.movementY * sensitivity, true);
     };
 
     document.addEventListener('mousemove', handlePointerLockMove);
     return () => document.removeEventListener('mousemove', handlePointerLockMove);
   }, [gl, settings]);
-
-  // Map desktop mouse sensitivity to CameraControls rotate speed (for drag-to-rotate)
-  useEffect(() => {
-    const desktopSens = settings?.desktop?.mouseSensitivity ?? 0.002;
-    if (!camControlRef.current) return;
-
-    // CameraControls exposes azimuth/polar rotate speed fields; scale the sensitivity to a usable range.
-    // This mapping is empirical: base 0.002 -> ~0.4 speed.
-    const scale = 200; // 0.002 * 200 = 0.4
-    try {
-      // @ts-ignore - some builds expose these fields
-      camControlRef.current.azimuthRotateSpeed = desktopSens * scale;
-      // @ts-ignore
-      camControlRef.current.polarRotateSpeed = desktopSens * scale;
-    } catch (e) {
-      // ignore if fields not present
-    }
-  }, [settings, camControlRef]);
 
   useFrame(() => {
     if (!bvhEcctrlRef.current?.group || !camControlRef.current) return;
